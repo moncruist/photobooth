@@ -11,6 +11,7 @@ class RaspberryCamera : public CameraInterface{
 public:
     int init() override;
     int deinit() override;
+    bool is_valid() override;
     cv::Mat get_frame() override;
 
 private:

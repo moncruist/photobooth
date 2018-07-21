@@ -1,12 +1,24 @@
 #ifndef PHOTOBOOTH_OPENCVCAMERA_H
 #define PHOTOBOOTH_OPENCVCAMERA_H
 
+#include <memory>
 #include "CameraInterface.h"
 
 namespace phb {
 
 class OpenCvCamera : public CameraInterface {
+public:
+    explicit OpenCvCamera(int index);
+    ~OpenCvCamera();
 
+    int init() override;
+    int deinit() override;
+    bool is_valid() override;
+    cv::Mat get_frame() override;
+
+private:
+    int index_ {0};
+    std::unique_ptr<cv::VideoCapture> camera_;
 };
 
 }

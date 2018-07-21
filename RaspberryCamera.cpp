@@ -10,6 +10,10 @@ int RaspberryCamera::deinit() {
     return 0;
 }
 
+bool RaspberryCamera::is_valid() {
+    return false;
+}
+
 cv::Mat RaspberryCamera::get_frame() {
     return cv::Mat();
 }

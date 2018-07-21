@@ -5,6 +5,9 @@
 
 #ifdef RPI_BOARD
 #include <bcm_host.h>
+#include "RaspberryCamera.h"
+#else
+#include "OpenCvCamera.h"
 #endif
 
 #include "dslr/DslrCamera.h"
@@ -50,31 +53,40 @@ int main(int argc, char *argv[]) {
     auto ctx = DslrContext::make_context();
     auto list = DslrCameraInfo::get_available_cameras(ctx);
     DslrCamera cam{ctx};
-    auto file = cam.capture();
+    try {
+        auto file = cam.capture();
 
-    INFO() << "File name: " << file.name;
-    std::ofstream out(file.name, std::ios_base::binary | std::ios_base::out);
-    char *buf_ptr = reinterpret_cast<char*>(file.data.data());
-    out.write(buf_ptr, file.data.size());
-    out.close();
-    return 0;
+        INFO() << "File name: " << file.name;
+        std::ofstream out(file.name, std::ios_base::binary | std::ios_base::out);
+        char* buf_ptr = reinterpret_cast<char*>(file.data.data());
+        out.write(buf_ptr, file.data.size());
+        out.close();
+    } catch (std::runtime_error &e) {
+        ERR() << "Error: " << e.what();
+    }
 
-    cv::VideoCapture cap(0); // open the default camera
-    if(!cap.isOpened())  // check if we succeeded
+    std::unique_ptr<phb::CameraInterface> camera;
+#ifdef RPI_BOARD
+    camera = std::make_unique<phb::RaspberryCamera>();
+#else
+    camera = std::make_unique<phb::OpenCvCamera>(0);
+#endif
+
+    if(camera->init() != 0)  // check if we succeeded
         return -1;
 
     cv::Mat edges;
     cv::namedWindow("edges",1);
     for(;;)
     {
-        cv::Mat frame;
-        cap >> frame; // get a new frame from camera
+        cv::Mat frame = camera->get_frame(); // get a new frame from camera
         cv::cvtColor(frame, edges, cv::COLOR_BGR2GRAY);
         GaussianBlur(edges, edges, cv::Size(7,7), 1.5, 1.5);
         Canny(edges, edges, 0, 30, 3);
         imshow("edges", edges);
         if(cv::waitKey(30) >= 0) break;
     }
+    camera->deinit();
     // the camera will be deinitialized automatically in VideoCapture destructor
     return 0;
 }

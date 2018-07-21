@@ -10,6 +10,7 @@ public:
     virtual ~CameraInterface() = default;
     virtual int init() = 0;
     virtual int deinit() = 0;
+    virtual bool is_valid() = 0;
     virtual cv::Mat get_frame() = 0;
 };
 
