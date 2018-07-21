@@ -1,10 +1,15 @@
 #include <opencv2/opencv.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/utility/setup.hpp>
+#include <fstream>
 
 #ifdef RPI_BOARD
 #include <bcm_host.h>
 #endif
+
+#include "dslr/DslrCamera.h"
+#include "dslr/DslrCameraInfo.h"
+#include "logging.h"
 
 static void init_log()
 {
@@ -35,11 +40,24 @@ static void init_log()
 
 int main(int argc, char *argv[]) {
 
+    using namespace phb::dslr;
 #ifdef RPI_BOARD
     bcm_host_init();
 #endif
 
     init_log();
+
+    auto ctx = DslrContext::make_context();
+    auto list = DslrCameraInfo::get_available_cameras(ctx);
+    DslrCamera cam{ctx};
+    auto file = cam.capture();
+
+    INFO() << "File name: " << file.name;
+    std::ofstream out(file.name, std::ios_base::binary | std::ios_base::out);
+    char *buf_ptr = reinterpret_cast<char*>(file.data.data());
+    out.write(buf_ptr, file.data.size());
+    out.close();
+    return 0;
 
     cv::VideoCapture cap(0); // open the default camera
     if(!cap.isOpened())  // check if we succeeded
