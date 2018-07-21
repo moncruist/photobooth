@@ -30,7 +30,9 @@ set(DSLR_SOURCES
         dslr/DslrCamera.cpp
         dslr/DslrCamera.h
         dslr/DslrCameraInfo.cpp
-        dslr/DslrCameraInfo.h)
+        dslr/DslrCameraInfo.h
+        dslr/DslrContext.cpp
+        dslr/DslrContext.h)
 
 set(PHOTOBOOTH_SOURCES
         main.cpp
@@ -39,7 +41,7 @@ set(PHOTOBOOTH_SOURCES
         OpenCvCamera.h
         logging.h
         ${BOARD_SOURCES}
-        ${DSLR_SOURCES} dslr/DslrContext.cpp dslr/DslrContext.h)
+        ${DSLR_SOURCES})
 
 include_directories(${GPHOTO2_INCLUDE_DIR})
 
