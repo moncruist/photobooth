@@ -13,10 +13,11 @@
 #include "dslr/DslrCamera.h"
 #include "dslr/DslrCameraInfo.h"
 #include "logging.h"
+#include "XWindowOutputContext.h"
 
 static void init_log()
 {
-    static const std::string COMMON_FMT("[%TimeStamp%][%Severity%]:  %Message%");
+    static const std::string COMMON_FMT("[%TimeStamp%][%Severity%]%Message%");
 
     boost::log::register_simple_formatter_factory< boost::log::trivial::severity_level, char >("Severity");
 
@@ -24,7 +25,7 @@ static void init_log()
     boost::log::add_console_log(
         std::cout,
         boost::log::keywords::format = COMMON_FMT,
-        boost::log::keywords::auto_flush = true
+        boost::log::keywords::auto_flush = false
     );
 
     // Output message to file, rotates when file reached 1mb or at midnight every day. Each log file
@@ -66,6 +67,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::unique_ptr<phb::CameraInterface> camera;
+    std::unique_ptr<phb::XWindowOutputContext> output;
 #ifdef RPI_BOARD
     camera = std::make_unique<phb::RaspberryCamera>();
 #else
@@ -75,8 +77,10 @@ int main(int argc, char *argv[]) {
     if(camera->init() != 0)  // check if we succeeded
         return -1;
 
-    cv::CascadeClassifier face_cascade("/usr/local/Cellar/opencv/3.4.2/share/OpenCV/haarcascades/haarcascade_frontalface_default.xml");
-    cv::CascadeClassifier smile_cascade("/usr/local/Cellar/opencv/3.4.2/share/OpenCV/haarcascades/haarcascade_smile.xml");
+    output = std::make_unique<phb::XWindowOutputContext>("demo");
+
+/*    cv::CascadeClassifier face_cascade("/usr/local/share/OpenCV/haarcascades/haarcascade_frontalface_default.xml");
+    cv::CascadeClassifier smile_cascade("/usr/local/share/OpenCV/haarcascades/haarcascade_smile.xml");
 
     cv::Mat gray;
     cv::namedWindow("edges",1);
@@ -100,6 +104,12 @@ int main(int argc, char *argv[]) {
         imshow("edges", frame);
         if(cv::waitKey(30) >= 0) break;
     }
+    */
+
+    output->run();
+
+    output.reset();
+
     camera->deinit();
     // the camera will be deinitialized automatically in VideoCapture destructor
     return 0;

@@ -2,6 +2,7 @@
 #define PHOTOBOOTH_OPENCVCAMERA_H
 
 #include <memory>
+#include <opencv2/opencv.hpp>
 #include "CameraInterface.h"
 
 namespace phb {
