@@ -7,7 +7,7 @@
 #include <bcm_host.h>
 #include "RaspberryCamera.h"
 #else
-#include "OpenCvCamera.h"
+#include "camera/OpenCvCamera.h"
 #endif
 
 #include "dslr/DslrCamera.h"
@@ -66,12 +66,12 @@ int main(int argc, char *argv[]) {
         ERR() << "Error: " << e.what();
     }
 
-    std::unique_ptr<phb::CameraInterface> camera;
+    std::unique_ptr<phb::camera::CameraInterface> camera;
     std::unique_ptr<phb::gui::AbstractEglGui> gui;
 #ifdef RPI_BOARD
-    camera = std::make_unique<phb::RaspberryCamera>();
+    camera = std::make_unique<phb::camera::RaspberryCamera>();
 #else
-    camera = std::make_unique<phb::OpenCvCamera>(0);
+    camera = std::make_unique<phb::camera::OpenCvCamera>(0);
 #endif
 
     if(camera->init() != 0)  // check if we succeeded

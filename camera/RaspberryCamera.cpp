@@ -1,6 +1,6 @@
 #include "RaspberryCamera.h"
 
-namespace phb {
+namespace phb::camera {
 
 int RaspberryCamera::init() {
     return 0;

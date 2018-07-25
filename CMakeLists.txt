@@ -32,6 +32,11 @@ set(GUI_SOURCES
         gui/AbstractEglGui.cpp 
         gui/AbstractEglGui.h)
 
+set(CAMERA_SOURCES
+        camera/CameraInterface.h
+        camera/OpenCvCamera.cpp
+        camera/OpenCvCamera.h)
+
 set(PLATFORM_SOURCES)
 set(PLATFORM_LIBS)
 
@@ -46,9 +51,9 @@ if (RPI)
             gui/VideoCoreEglGui.cpp
             gui/VideoCoreEglGui.h)
 
-    list(APPEND PLATFORM_SOURCES
-            RaspberryCamera.cpp
-            RaspberryCamera.h)
+    list(APPEND CAMERA_SOURCES
+            camera/RaspberryCamera.cpp
+            camera/RaspberryCamera.h)
 else()
     find_package(X11 REQUIRED)
     find_package(OpenGL COMPONENTS EGL REQUIRED)
@@ -70,13 +75,11 @@ endif()
 
 set(PHOTOBOOTH_SOURCES
         main.cpp
-        CameraInterface.h
-        OpenCvCamera.cpp
-        OpenCvCamera.h
         logging.h
         ${PLATFORM_SOURCES}
         ${DSLR_SOURCES}
-        ${GUI_SOURCES})
+        ${GUI_SOURCES}
+        ${CAMERA_SOURCES})
 
 include_directories(${GPHOTO2_INCLUDE_DIR})
 

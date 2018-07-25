@@ -1,6 +1,6 @@
 #include "OpenCvCamera.h"
 
-namespace phb {
+namespace phb::camera {
 
 OpenCvCamera::OpenCvCamera(int index)
         : index_(index) {

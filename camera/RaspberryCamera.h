@@ -5,7 +5,7 @@
 
 #include "CameraInterface.h"
 
-namespace phb {
+namespace phb::camera {
 
 class RaspberryCamera : public CameraInterface{
 public:

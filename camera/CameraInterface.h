@@ -3,7 +3,7 @@
 
 #include <opencv2/opencv.hpp>
 
-namespace phb {
+namespace phb::camera {
 
 class CameraInterface {
 public:
