@@ -4,13 +4,13 @@
 #include <GLES2/gl2.h>
 #include <EGL/egl.h>
 #include <chrono>
-#include "XWindowOutputContext.h"
+#include "XlibEglGui.h"
 #include "logging.h"
 
 namespace phb::gui {
 
-XWindowOutputContext::XWindowOutputContext(const std::string& title, XWindowListenerInterface* listener)
-    : listener_(listener) {
+XlibEglGui::XlibEglGui(const std::string& title, GuiListener* listener)
+    : AbstractEglGui(listener) {
     init_window(title);
     try {
         init_egl();
@@ -20,12 +20,12 @@ XWindowOutputContext::XWindowOutputContext(const std::string& title, XWindowList
     }
 }
 
-XWindowOutputContext::~XWindowOutputContext() {
+XlibEglGui::~XlibEglGui() {
     deinit_egl();
     deinit_window();
 }
 
-void XWindowOutputContext::init_window(const std::string& title) {
+void XlibEglGui::init_window(const std::string& title) {
     INFO() << "Initializing X window";
     // Establish connection to Xorg server
     x_display_ = XOpenDisplay(NULL);
@@ -34,7 +34,7 @@ void XWindowOutputContext::init_window(const std::string& title) {
         throw std::runtime_error("Failed to open display");
     }
 
-    XSetErrorHandler(&XWindowOutputContext::xlib_error_handler);
+    XSetErrorHandler(&XlibEglGui::xlib_error_handler);
 
     // Create window
     Window root = DefaultRootWindow(x_display_);
@@ -76,7 +76,7 @@ void XWindowOutputContext::init_window(const std::string& title) {
                 &xev );
 }
 
-void XWindowOutputContext::init_egl() {
+void XlibEglGui::init_egl() {
     INFO() << "Initializing EGL";
 
     EGLint contextAttrs[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE, EGL_NONE };
@@ -148,7 +148,7 @@ void XWindowOutputContext::init_egl() {
     }
 }
 
-void XWindowOutputContext::deinit_window() {
+void XlibEglGui::deinit_window() {
     if (x_display_) {
         XDestroyWindow(x_display_, window_);
         XSetErrorHandler(nullptr);
@@ -157,7 +157,7 @@ void XWindowOutputContext::deinit_window() {
     }
 }
 
-void XWindowOutputContext::deinit_egl() {
+void XlibEglGui::deinit_egl() {
     if (egl_display_) {
         if (egl_context_) {
             eglDestroyContext(egl_display_, egl_context_);
@@ -174,7 +174,7 @@ void XWindowOutputContext::deinit_egl() {
     }
 }
 
-int XWindowOutputContext::xlib_error_handler(Display *display, XErrorEvent *event) {
+int XlibEglGui::xlib_error_handler(Display *display, XErrorEvent *event) {
     static std::array<char, 256> msg_buf;
     XGetErrorText(display, event->error_code, msg_buf.data(), msg_buf.size());
 
@@ -182,31 +182,15 @@ int XWindowOutputContext::xlib_error_handler(Display *display, XErrorEvent *even
     return 0;
 }
 
-void XWindowOutputContext::set_listener(XWindowListenerInterface *listener) {
-    listener_ = listener;
-}
-
-Display* XWindowOutputContext::get_x_display() const {
+Display* XlibEglGui::get_x_display() const {
     return x_display_;
 }
 
-Window XWindowOutputContext::get_x_window() const {
+Window XlibEglGui::get_x_window() const {
     return window_;
 }
 
-EGLDisplay XWindowOutputContext::get_egl_display() const {
-    return egl_display_;
-}
-
-EGLContext XWindowOutputContext::get_egl_context() const {
-    return egl_context_;
-}
-
-EGLSurface XWindowOutputContext::get_egl_surface() const {
-    return egl_surface_;
-}
-
-void XWindowOutputContext::run() {
+void XlibEglGui::run() {
     auto prev_frame = now_ms();
     int64_t total_time = 0;
     unsigned int frames = 0;
@@ -234,7 +218,7 @@ void XWindowOutputContext::run() {
     }
 }
 
-bool XWindowOutputContext::handle_user_events() {
+bool XlibEglGui::handle_user_events() {
     XEvent event;
     KeySym key;
     char text;
@@ -271,7 +255,7 @@ bool XWindowOutputContext::handle_user_events() {
     return should_run;
 }
 
-int64_t XWindowOutputContext::now_ms() {
+int64_t XlibEglGui::now_ms() {
     using namespace std::chrono;
     return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 }

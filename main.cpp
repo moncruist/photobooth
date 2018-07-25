@@ -13,7 +13,7 @@
 #include "dslr/DslrCamera.h"
 #include "dslr/DslrCameraInfo.h"
 #include "logging.h"
-#include "gui/XWindowOutputContext.h"
+#include "gui/XlibEglGui.h"
 
 static void init_log()
 {
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::unique_ptr<phb::CameraInterface> camera;
-    std::unique_ptr<phb::gui::XWindowOutputContext> output;
+    std::unique_ptr<phb::gui::AbstractEglGui> gui;
 #ifdef RPI_BOARD
     camera = std::make_unique<phb::RaspberryCamera>();
 #else
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
     if(camera->init() != 0)  // check if we succeeded
         return -1;
 
-    output = std::make_unique<phb::gui::XWindowOutputContext>("demo");
+    gui = std::make_unique<phb::gui::XlibEglGui>("demo");
 
 /*    cv::CascadeClassifier face_cascade("/usr/local/share/OpenCV/haarcascades/haarcascade_frontalface_default.xml");
     cv::CascadeClassifier smile_cascade("/usr/local/share/OpenCV/haarcascades/haarcascade_smile.xml");
@@ -106,9 +106,9 @@ int main(int argc, char *argv[]) {
     }
     */
 
-    output->run();
+    gui->run();
 
-    output.reset();
+    gui.reset();
 
     camera->deinit();
     // the camera will be deinitialized automatically in VideoCapture destructor
