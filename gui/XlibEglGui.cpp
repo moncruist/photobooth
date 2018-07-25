@@ -211,7 +211,8 @@ void XlibEglGui::run() {
         frames++;
 
         if (total_time > 10000) {
-            DBG() << frames << " frames rendered in " << total_time << " milliseconds. FPS=" << static_cast<double>(frames) / static_cast<double>(total_time);
+            double fps = static_cast<double>(frames) * 1000 / static_cast<double>(total_time);
+            DBG() << frames << " frames rendered in " << total_time << " milliseconds. FPS=" << fps;
             total_time -= 10000;
             frames = 0;
         }
