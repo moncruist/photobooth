@@ -11,7 +11,7 @@
 #include <mutex>
 #include <chrono>
 
-namespace phb {
+namespace phb::gui {
 
 class XWindowOutputContext;
 

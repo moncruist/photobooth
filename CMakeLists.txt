@@ -45,16 +45,19 @@ set(DSLR_SOURCES
         dslr/DslrContext.cpp
         dslr/DslrContext.h)
 
+set(GUI_SOURCES
+        gui/XWindowOutputContext.cpp
+        gui/XWindowOutputContext.h)
+
 set(PHOTOBOOTH_SOURCES
         main.cpp
         CameraInterface.h
         OpenCvCamera.cpp
         OpenCvCamera.h
-        XWindowOutputContext.cpp
-        XWindowOutputContext.h
         logging.h
         ${BOARD_SOURCES}
-        ${DSLR_SOURCES})
+        ${DSLR_SOURCES}
+        ${GUI_SOURCES})
 
 include_directories(${GPHOTO2_INCLUDE_DIR})
 

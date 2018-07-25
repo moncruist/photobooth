@@ -7,7 +7,7 @@
 #include "XWindowOutputContext.h"
 #include "logging.h"
 
-namespace phb {
+namespace phb::gui {
 
 XWindowOutputContext::XWindowOutputContext(const std::string& title, XWindowListenerInterface* listener)
     : listener_(listener) {
