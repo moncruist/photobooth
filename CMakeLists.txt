@@ -18,6 +18,7 @@ find_package(OpenCV REQUIRED)
 find_package(Boost COMPONENTS log REQUIRED )
 find_package(Gphoto2 REQUIRED)
 find_package(Threads REQUIRED)
+find_package(X11 REQUIRED)
 
 
 set(DSLR_SOURCES
@@ -45,21 +46,29 @@ if (RPI)
     find_package(Raspberry REQUIRED)
 
     list(APPEND PLATFORM_LIBS ${RASPBERRY_LIBRARIES})
+
+    find_package(OpenGL COMPONENTS EGL REQUIRED)
+    find_package(OpenGLES2 REQUIRED)
+
+    include_directories(${OpengGL_EGL_INCLUDE_DIR})
+    include_directories(${OPENGLES2_INCLUDE_DIR})
     include_directories(${RASPBERRY_INCLUDE_DIR})
 
     list(APPEND GUI_SOURCES
-            gui/VideoCoreEglGui.cpp
-            gui/VideoCoreEglGui.h)
+            gui/XlibEglGui.cpp
+            gui/XlibEglGui.h)
+
+    list(APPEND PLATFORM_LIBS
+            OpenGL::EGL
+            OpenGLES2::OpenGLES2)
 
     list(APPEND CAMERA_SOURCES
             camera/RaspberryCamera.cpp
             camera/RaspberryCamera.h)
 else()
-    find_package(X11 REQUIRED)
     find_package(OpenGL COMPONENTS EGL REQUIRED)
     find_package(OpenGLES2 REQUIRED)
 
-    include_directories(${X11_INCLUDE_DIR})
     include_directories(${OpengGL_EGL_INCLUDE_DIR})
     include_directories(${OPENGLES2_INCLUDE_DIR})
 
@@ -69,8 +78,7 @@ else()
 
     list(APPEND PLATFORM_LIBS
             OpenGL::EGL
-            OpenGLES2::OpenGLES2
-            ${X11_LIBRARIES})
+            OpenGLES2::OpenGLES2)
 endif()
 
 set(PHOTOBOOTH_SOURCES
@@ -82,6 +90,8 @@ set(PHOTOBOOTH_SOURCES
         ${CAMERA_SOURCES})
 
 include_directories(${GPHOTO2_INCLUDE_DIR})
+include_directories(${X11_INCLUDE_DIR})
+include_directories(${Boost_INCLUDE_DIR})
 
 add_executable(photobooth ${PHOTOBOOTH_SOURCES})
 
@@ -90,4 +100,5 @@ target_link_libraries(photobooth
         ${PLATFORM_LIBS}
         ${Boost_LIBRARIES}
         ${Gphoto2_LIBRARIES}
+        ${X11_LIBRARIES}
         Threads::Threads )

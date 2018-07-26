@@ -5,15 +5,17 @@
 
 #ifdef RPI_BOARD
 #include <bcm_host.h>
-#include "RaspberryCamera.h"
+#include "gui/XlibEglGui.h"
+#include "camera/RaspberryCamera.h"
 #else
 #include "camera/OpenCvCamera.h"
+#include "gui/XlibEglGui.h"
 #endif
 
 #include "dslr/DslrCamera.h"
 #include "dslr/DslrCameraInfo.h"
 #include "logging.h"
-#include "gui/XlibEglGui.h"
+
 
 static void init_log()
 {
@@ -70,14 +72,16 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<phb::gui::AbstractEglGui> gui;
 #ifdef RPI_BOARD
     camera = std::make_unique<phb::camera::RaspberryCamera>();
+    gui = std::make_unique<phb::gui::XlibEglGui>("demo");
 #else
     camera = std::make_unique<phb::camera::OpenCvCamera>(0);
+    gui = std::make_unique<phb::gui::XlibEglGui>("demo");
 #endif
 
     if(camera->init() != 0)  // check if we succeeded
         return -1;
 
-    gui = std::make_unique<phb::gui::XlibEglGui>("demo");
+
 
 /*    cv::CascadeClassifier face_cascade("/usr/local/share/OpenCV/haarcascades/haarcascade_frontalface_default.xml");
     cv::CascadeClassifier smile_cascade("/usr/local/share/OpenCV/haarcascades/haarcascade_smile.xml");
