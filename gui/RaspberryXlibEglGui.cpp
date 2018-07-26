@@ -275,6 +275,13 @@ void RaspberryXlibEglGui::run() {
     int64_t total_time = 0;
     unsigned int frames = 0;
 
+    if (listener_) {
+        if (!listener_->on_init(*this)) {
+            ERR() << "Failed to init renderer";
+            return;
+        }
+    }
+
     while (handle_user_events()) {
         if (listener_) {
             listener_->on_update(*this);

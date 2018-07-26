@@ -23,6 +23,9 @@ public:
     Display* get_x_display() const;
     Window get_x_window() const;
 
+    int get_width() override;
+    int get_height() override;
+
     void run() override ;
 
 private:

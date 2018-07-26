@@ -190,10 +190,25 @@ Window XlibEglGui::get_x_window() const {
     return window_;
 }
 
+int XlibEglGui::get_width() {
+    return 1920;
+}
+
+int XlibEglGui::get_height() {
+    return 1080;
+}
+
 void XlibEglGui::run() {
     auto prev_frame = now_ms();
     int64_t total_time = 0;
     unsigned int frames = 0;
+
+    if (listener_) {
+        if (!listener_->on_init(*this)) {
+            ERR() << "Failed to init renderer";
+            return;
+        }
+    }
 
     while (handle_user_events()) {
         if (listener_) {

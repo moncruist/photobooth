@@ -31,7 +31,7 @@ set(DSLR_SOURCES
 
 set(GUI_SOURCES
         gui/AbstractEglGui.cpp 
-        gui/AbstractEglGui.h)
+        gui/AbstractEglGui.h gui/Renderer.cpp gui/Renderer.h)
 
 set(CAMERA_SOURCES
         camera/CameraInterface.h

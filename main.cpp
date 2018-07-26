@@ -2,6 +2,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/utility/setup.hpp>
 #include <fstream>
+#include "gui/Renderer.h"
 
 #ifdef RPI_BOARD
 #include <bcm_host.h>
@@ -70,12 +71,13 @@ int main(int argc, char *argv[]) {
 
     std::unique_ptr<phb::camera::CameraInterface> camera;
     std::unique_ptr<phb::gui::AbstractEglGui> gui;
+    phb::gui::Renderer renderer;
 #ifdef RPI_BOARD
     camera = std::make_unique<phb::camera::RaspberryCamera>();
-    gui = std::make_unique<phb::gui::XlibEglGui>("demo");
+    gui = std::make_unique<phb::gui::XlibEglGui>("demo", &renderer);
 #else
     camera = std::make_unique<phb::camera::OpenCvCamera>(0);
-    gui = std::make_unique<phb::gui::XlibEglGui>("demo");
+    gui = std::make_unique<phb::gui::XlibEglGui>("demo", &renderer);
 #endif
 
     if(camera->init() != 0)  // check if we succeeded
