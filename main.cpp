@@ -74,11 +74,11 @@ int main(int argc, char *argv[]) {
     phb::gui::Renderer renderer;
 #ifdef RPI_BOARD
     camera = std::make_unique<phb::camera::RaspberryCamera>();
-    gui = std::make_unique<phb::gui::XlibEglGui>("demo", &renderer);
 #else
     camera = std::make_unique<phb::camera::OpenCvCamera>(0);
-    gui = std::make_unique<phb::gui::XlibEglGui>("demo", &renderer);
 #endif
+
+    gui = std::make_unique<phb::gui::XlibEglGui>("demo", &renderer);
 
     if(camera->init() != 0)  // check if we succeeded
         return -1;
