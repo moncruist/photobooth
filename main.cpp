@@ -73,16 +73,14 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<phb::gui::AbstractEglGui> gui;
     phb::gui::Renderer renderer;
 #ifdef RPI_BOARD
-    camera = std::make_unique<phb::camera::RaspberryCamera>();
+    camera = std::make_unique<phb::camera::RaspberryCamera>(1920, 1080, 30);
 #else
     camera = std::make_unique<phb::camera::OpenCvCamera>(0);
 #endif
 
-    gui = std::make_unique<phb::gui::XlibEglGui>("demo", &renderer);
-
-    if(camera->init() != 0)  // check if we succeeded
+    if(camera->init() != 0) {  // check if we succeeded
         return -1;
-
+    }
 
 
 /*    cv::CascadeClassifier face_cascade("/usr/local/share/OpenCV/haarcascades/haarcascade_frontalface_default.xml");
@@ -112,7 +110,12 @@ int main(int argc, char *argv[]) {
     }
     */
 
-    gui->run();
+    try {
+        gui = std::make_unique<phb::gui::XlibEglGui>("demo", &renderer);
+        gui->run();
+    } catch (std::runtime_error &e) {
+        ERR() << "Gui error: " << e.what();
+    }
 
     gui.reset();
 
