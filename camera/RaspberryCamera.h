@@ -25,6 +25,8 @@ private:
 
     static constexpr size_t VIDEO_OUTPUT_BUFFERS_NUM    = 3;
 
+    int init_camera_component();
+    int init_preview_component();
     int select_camera(int camera);
     int disable_stereo_mode(MMAL_PORT_T* port);
     int set_sensor_mode(int mode);
@@ -43,6 +45,8 @@ private:
     MMAL_PORT_T* viewfinder_ {nullptr};
     MMAL_PORT_T* video_ {nullptr};
     MMAL_PORT_T* still_ {nullptr};
+
+    MMAL_COMPONENT_T* dummy_preview_ {nullptr};
 };
 
 }

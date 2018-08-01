@@ -3,14 +3,22 @@
 #include "RaspberryCamera.h"
 #include "logging.h"
 
-#define WRAP_CALL_FULL(call, st, err)  do {\
+#define WRAP_CALL_GOTO_FULL(call, st, err)  do {\
     st = call; \
     if (st != MMAL_SUCCESS) { \
         goto err; \
     } \
 } while(0)
 
-#define WRAP_CALL(call) WRAP_CALL_FULL(call, status, cleanup)
+#define WRAP_CALL_RETURN_FULL(call, st)  do {\
+    st = call; \
+    if (st != MMAL_SUCCESS) { \
+        return st; \
+    } \
+} while(0)
+
+#define WRAP_CALL_GOTO(call) WRAP_CALL_GOTO_FULL(call, status, cleanup)
+#define WRAP_CALL_RETURN(call) WRAP_CALL_RETURN_FULL(call, status)
 
 namespace phb::camera {
 
@@ -24,56 +32,9 @@ RaspberryCamera::~RaspberryCamera() {
 }
 
 int RaspberryCamera::init() {
-    int status = 0;
-    bool success = true;
-
-    INFO() << "Initialize Raspberry Camera";
-    status = mmal_component_create(MMAL_COMPONENT_DEFAULT_CAMERA, &camera_);
+    int status = init_camera_component();
     if (status != MMAL_SUCCESS) {
-        ERR() << "Failed to create component '" << MMAL_COMPONENT_DEFAULT_CAMERA << "': " << status;
-        return -status;
-    }
-
-    if (camera_->output_num < CAMERA_NECESSARY_PORTS_NUM) {
-        ERR() << "Camera has invalid number of outputs: " << camera_->output_num;
-        status = MMAL_EINVAL;
-        goto cleanup;
-    }
-
-    viewfinder_ = camera_->output[CAMERA_PREVIEW_PORT];
-    video_ = camera_->output[CAMERA_VIDEO_PORT];
-    still_ = camera_->output[CAMERA_CAPTURE_PORT];
-
-    for (int i = 0; i < camera_->output_num; i++) {
-        status = disable_stereo_mode(camera_->output[i]);
-        if (status != MMAL_SUCCESS) {
-            success = false;
-            break;
-        }
-    }
-
-    if (!success) {
-        goto cleanup;
-    }
-
-    WRAP_CALL(select_camera(0));
-    WRAP_CALL(set_sensor_mode(0)); // set auto mode
-
-    status = mmal_port_enable(camera_->control, &RaspberryCamera::camera_control_callback);
-    if (status != MMAL_SUCCESS) {
-        ERR() << "Failed to enable camera control port: " << status;
-        goto cleanup;
-    }
-
-    WRAP_CALL(setup_config());
-    WRAP_CALL(setup_viewfinder_format());
-    WRAP_CALL(setup_video_format());
-    WRAP_CALL(setup_capture_format());
-
-    INFO() << "Enabling camera";
-    status = mmal_component_enable(camera_);
-    if (status != MMAL_SUCCESS) {
-        ERR() << "Failed to enable camera: " << status;
+        ERR() << "Failed to init camera: " << status;
         goto cleanup;
     }
 
@@ -106,6 +67,64 @@ bool RaspberryCamera::is_valid() {
 
 cv::Mat RaspberryCamera::get_frame() {
     return cv::Mat();
+}
+
+int RaspberryCamera::init_camera_component() {
+    int status;
+    bool success = true;
+    INFO() << "Initialize Raspberry Camera";
+    status = mmal_component_create(MMAL_COMPONENT_DEFAULT_CAMERA, &camera_);
+    if (status != MMAL_SUCCESS) {
+        ERR() << "Failed to create component '" << MMAL_COMPONENT_DEFAULT_CAMERA << "': " << status;
+        return status;
+    }
+
+    if (camera_->output_num < CAMERA_NECESSARY_PORTS_NUM) {
+        ERR() << "Camera has invalid number of outputs: " << camera_->output_num;
+        status = MMAL_EINVAL;
+        return status;
+    }
+
+    viewfinder_ = camera_->output[CAMERA_PREVIEW_PORT];
+    video_ = camera_->output[CAMERA_VIDEO_PORT];
+    still_ = camera_->output[CAMERA_CAPTURE_PORT];
+
+    for (int i = 0; i < camera_->output_num; i++) {
+        status = disable_stereo_mode(camera_->output[i]);
+        if (status != MMAL_SUCCESS) {
+            success = false;
+            break;
+        }
+    }
+
+    if (!success) {
+        return status;
+    }
+
+    WRAP_CALL_RETURN(select_camera(0));
+    WRAP_CALL_RETURN(set_sensor_mode(0)); // set auto mode
+
+    status = mmal_port_enable(camera_->control, &RaspberryCamera::camera_control_callback);
+    if (status != MMAL_SUCCESS) {
+        ERR() << "Failed to enable camera control port: " << status;
+        return status;
+    }
+
+    WRAP_CALL_RETURN(setup_config());
+    WRAP_CALL_RETURN(setup_viewfinder_format());
+    WRAP_CALL_RETURN(setup_video_format());
+    WRAP_CALL_RETURN(setup_capture_format());
+
+    INFO() << "Enabling camera";
+    status = mmal_component_enable(camera_);
+    if (status != MMAL_SUCCESS) {
+        ERR() << "Failed to enable camera: " << status;
+    }
+    return status;
+}
+
+int RaspberryCamera::init_preview_component() {
+    return 0;
 }
 
 int RaspberryCamera::select_camera(int camera) {
@@ -189,8 +208,8 @@ int RaspberryCamera::setup_viewfinder_format() {
 int RaspberryCamera::setup_video_format() {
     // Set the encode format on the video  port
     MMAL_ES_FORMAT_T* format = video_->format;
-    format->encoding_variant = MMAL_ENCODING_I420;
-    format->encoding = MMAL_ENCODING_OPAQUE;
+    format->encoding_variant = 0;
+    format->encoding = MMAL_ENCODING_RGB24;
     format->es->video.width = VCOS_ALIGN_UP(width_, 32);
     format->es->video.height = VCOS_ALIGN_UP(height_, 16);
     format->es->video.crop.x = 0;
