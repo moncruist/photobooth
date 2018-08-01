@@ -4,13 +4,6 @@
 #include "RaspberryCamera.h"
 #include "logging.h"
 
-#define WRAP_CALL_GOTO_FULL(call, st, err)  do {\
-    st = call; \
-    if (st != MMAL_SUCCESS) { \
-        goto err; \
-    } \
-} while(0)
-
 #define WRAP_CALL_RETURN_FULL(call, st)  do {\
     st = call; \
     if (st != MMAL_SUCCESS) { \
@@ -18,7 +11,6 @@
     } \
 } while(0)
 
-#define WRAP_CALL_GOTO(call) WRAP_CALL_GOTO_FULL(call, status, cleanup)
 #define WRAP_CALL_RETURN(call) WRAP_CALL_RETURN_FULL(call, status)
 
 namespace phb::camera {
