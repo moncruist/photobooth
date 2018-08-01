@@ -1,5 +1,6 @@
 #include <interface/mmal/util/mmal_default_components.h>
 #include <interface/mmal/util/mmal_util_params.h>
+#include <interface/mmal/util/mmal_util.h>
 #include "RaspberryCamera.h"
 #include "logging.h"
 
@@ -32,32 +33,50 @@ RaspberryCamera::~RaspberryCamera() {
 }
 
 int RaspberryCamera::init() {
+    std::lock_guard<decltype(mutex_)> guard(mutex_);
     int status = init_camera_component();
     if (status != MMAL_SUCCESS) {
         ERR() << "Failed to init camera: " << status;
         goto cleanup;
     }
 
+    if ((status = init_preview_component()) != MMAL_SUCCESS) {
+        goto cleanup;
+    }
+
+    video_->userdata = reinterpret_cast<struct MMAL_PORT_USERDATA_T*>(this);
+    status = mmal_port_enable(video_, &RaspberryCamera::camera_video_callback);
+    if (status != MMAL_SUCCESS) {
+        ERR() << "Failed to enable video port: " << status;
+        goto cleanup;
+    }
+
+    INFO() << "Start capture";
+    status = start_capture();
+    if (status != MMAL_SUCCESS) {
+        ERR() << "Failed to start capture: " << status;
+        goto cleanup;
+    }
+
     return 0;
 
 cleanup:
-    INFO() << "Cleaning up camera";
-    mmal_component_destroy(camera_);
-    viewfinder_ = nullptr;
-    video_ = nullptr;
-    still_ = nullptr;
+    deinit_locked();
     return -status;
 }
 
 int RaspberryCamera::deinit() {
-    if (camera_) {
-        INFO() << "Deinitialize Raspberry camera";
-        mmal_component_destroy(camera_);
-        camera_ = nullptr;
+    std::lock_guard<decltype(mutex_)> guard(mutex_);
+    return deinit_locked();
+}
+
+int RaspberryCamera::deinit_locked() {
+    if (preview_connection_) {
+        mmal_connection_destroy(preview_connection_);
+        preview_connection_ = nullptr;
     }
-    viewfinder_ = nullptr;
-    video_ = nullptr;
-    still_ = nullptr;
+    deinit_camera_component();
+    deinit_preview_component();
     return 0;
 }
 
@@ -119,12 +138,67 @@ int RaspberryCamera::init_camera_component() {
     status = mmal_component_enable(camera_);
     if (status != MMAL_SUCCESS) {
         ERR() << "Failed to enable camera: " << status;
+        return status;
     }
-    return status;
+
+    return MMAL_SUCCESS;
 }
 
 int RaspberryCamera::init_preview_component() {
-    return 0;
+    INFO() << "Initialize Raspberry Dummy Preview component";
+
+    int status = 0;
+    status = mmal_component_create(MMAL_COMPONENT_DEFAULT_VIDEO_RENDERER, &dummy_preview_);
+    if (status != MMAL_SUCCESS) {
+        ERR() << "Failed to create preview component: " << status;
+        return status;
+    }
+
+    status = mmal_component_enable(dummy_preview_);
+    if (status != MMAL_SUCCESS) {
+        ERR() << "Failed to enable preview component: " << status;
+        return status;
+    }
+
+    if (dummy_preview_->input_num == 0) {
+        ERR() << "No input ports in preview component";
+        return MMAL_EINVAL;
+    }
+
+    preview_input_port_ = dummy_preview_->input[0];
+
+    return MMAL_SUCCESS;
+}
+
+void RaspberryCamera::deinit_camera_component() {
+    if (!camera_) {
+        return;
+    }
+
+    INFO() << "Cleaning up camera";
+    stop_capture();
+    if (video_ && camera_pool_) {
+        mmal_port_disable(video_);
+        mmal_port_pool_destroy(video_, camera_pool_);
+    }
+
+    mmal_component_destroy(camera_);
+    viewfinder_ = nullptr;
+    video_ = nullptr;
+    still_ = nullptr;
+    camera_ = nullptr;
+    camera_pool_ = nullptr;
+}
+
+void RaspberryCamera::deinit_preview_component() {
+    if (!dummy_preview_) {
+        return;
+    }
+
+    INFO() << "Cleaning up preview";
+    mmal_component_destroy(dummy_preview_);
+    dummy_preview_ = nullptr;
+    preview_input_port_ = nullptr;
 }
 
 int RaspberryCamera::select_camera(int camera) {
@@ -188,7 +262,6 @@ int RaspberryCamera::setup_viewfinder_format() {
     // HW limitations mean we need the preview to be the same size as the required recorded output
     MMAL_ES_FORMAT_T* format = viewfinder_->format;
     format->encoding = MMAL_ENCODING_OPAQUE;
-    format->encoding_variant = MMAL_ENCODING_I420;
     format->es->video.width = VCOS_ALIGN_UP(width_, 32);
     format->es->video.height = VCOS_ALIGN_UP(height_, 16);
     format->es->video.crop.x = 0;
@@ -222,11 +295,20 @@ int RaspberryCamera::setup_video_format() {
     int status = mmal_port_format_commit(video_);
     if (status != MMAL_SUCCESS) {
         ERR() << "Failed to set video format: " << status;
+        return status;
+    }
+
+    status = mmal_port_parameter_set_boolean(video_, MMAL_PARAMETER_ZERO_COPY, MMAL_TRUE);
+    if (status != MMAL_SUCCESS) {
+        ERR() << "Failed to enable zero copy " << status;
+        return status;
     }
 
     if (video_->buffer_num < VIDEO_OUTPUT_BUFFERS_NUM) {
         video_->buffer_num = VIDEO_OUTPUT_BUFFERS_NUM;
     }
+
+    camera_pool_ = mmal_port_pool_create(video_, video_->buffer_num, video_->buffer_size);
     return status;
 }
 
@@ -255,6 +337,25 @@ int RaspberryCamera::setup_capture_format() {
     return status;
 }
 
+int RaspberryCamera::start_capture() {
+    int num = mmal_queue_length(camera_pool_->queue);
+    for (int q=0; q<num;q++) {
+        MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(camera_pool_->queue);
+
+        if (!buffer)
+            ERR() << "Unable to get a required buffer " << q << " from pool queue";
+
+        if (mmal_port_send_buffer(video_, buffer)!= MMAL_SUCCESS)
+            ERR() << "Unable to send a buffer to camera video port: " << q;
+    }
+
+    return mmal_port_parameter_set_boolean(video_, MMAL_PARAMETER_CAPTURE, MMAL_TRUE);
+}
+
+int RaspberryCamera::stop_capture() {
+    return mmal_port_parameter_set_boolean(video_, MMAL_PARAMETER_CAPTURE, MMAL_FALSE);
+}
+
 void RaspberryCamera::camera_control_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_T* buffer) {
     if (buffer->cmd == MMAL_EVENT_PARAMETER_CHANGED) {
         INFO() << "Something changed";
@@ -267,6 +368,35 @@ void RaspberryCamera::camera_control_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEA
     }
 
     mmal_buffer_header_release(buffer);
+}
+
+void RaspberryCamera::camera_video_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer) {
+    RaspberryCamera* raspicam = reinterpret_cast<RaspberryCamera*>(port->userdata);
+    if (!raspicam) {
+        ERR() << "Received a camera buffer callback with no state";
+        // release buffer back to the pool
+        mmal_buffer_header_release(buffer);
+    }
+
+    DBG() << "Recv video buffer size: " << buffer->length;
+
+    // release buffer back to the pool
+    mmal_buffer_header_release(buffer);
+
+    // and send one back to the port (if still open)
+    if (port->is_enabled) {
+        MMAL_STATUS_T status;
+
+        MMAL_BUFFER_HEADER_T* new_buffer = mmal_queue_get(raspicam->camera_pool_->queue);
+
+        if (new_buffer) {
+            status = mmal_port_send_buffer(port, new_buffer);
+        }
+
+        if (!new_buffer || status != MMAL_SUCCESS) {
+            ERR() << "Unable to return a buffer to the camera port";
+        }
+    }
 }
 
 }

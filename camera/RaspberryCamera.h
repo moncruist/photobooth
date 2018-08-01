@@ -1,7 +1,9 @@
 #ifndef PHOTOBOOTH_RASPBERRYCAMERA_H
 #define PHOTOBOOTH_RASPBERRYCAMERA_H
 
+#include <mutex>
 #include <interface/mmal/mmal.h>
+#include <interface/mmal/util/mmal_connection.h>
 
 #include "CameraInterface.h"
 
@@ -25,8 +27,13 @@ private:
 
     static constexpr size_t VIDEO_OUTPUT_BUFFERS_NUM    = 3;
 
+    int deinit_locked();
+
     int init_camera_component();
     int init_preview_component();
+    void deinit_camera_component();
+    void deinit_preview_component();
+
     int select_camera(int camera);
     int disable_stereo_mode(MMAL_PORT_T* port);
     int set_sensor_mode(int mode);
@@ -35,18 +42,27 @@ private:
     int setup_video_format();
     int setup_capture_format();
 
-    static void camera_control_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
+    int start_capture();
+    int stop_capture();
+
+    static void camera_control_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_T* buffer);
+    static void camera_video_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_T* buffer);
+
+    std::mutex mutex_;
 
     unsigned int width_ {0};
     unsigned int height_ {0};
     unsigned int frame_rate_ {0};
 
     MMAL_COMPONENT_T* camera_ {nullptr};
+    MMAL_POOL_T* camera_pool_ {nullptr};
     MMAL_PORT_T* viewfinder_ {nullptr};
     MMAL_PORT_T* video_ {nullptr};
     MMAL_PORT_T* still_ {nullptr};
 
     MMAL_COMPONENT_T* dummy_preview_ {nullptr};
+    MMAL_PORT_T* preview_input_port_ {nullptr};
+    MMAL_CONNECTION_T *preview_connection_ {nullptr};
 };
 
 }
