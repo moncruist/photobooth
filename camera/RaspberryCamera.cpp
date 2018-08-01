@@ -1,3 +1,4 @@
+#include <opencv2/opencv.hpp>
 #include <interface/mmal/util/mmal_default_components.h>
 #include <interface/mmal/util/mmal_util_params.h>
 #include <interface/mmal/util/mmal_util.h>
@@ -50,6 +51,7 @@ int RaspberryCamera::init() {
         goto cleanup;
     }
 
+    initialized_ = true;
     return 0;
 
 cleanup:
@@ -58,7 +60,8 @@ cleanup:
 }
 
 int RaspberryCamera::deinit() {
-    std::lock_guard<decltype(mutex_)> guard(mutex_);
+    frame_number_ = 0;
+    std::lock_guard guard(mutex_);
     return deinit_locked();
 }
 
@@ -69,15 +72,17 @@ int RaspberryCamera::deinit_locked() {
     }
     deinit_camera_component();
     deinit_preview_component();
+    initialized_ = false;
     return 0;
 }
 
 bool RaspberryCamera::is_valid() {
-    return false;
+    return initialized_;
 }
 
 cv::Mat RaspberryCamera::get_frame() {
-    return cv::Mat();
+    std::lock_guard guard(mutex_);
+    return frame_;
 }
 
 int RaspberryCamera::init_camera_component() {
@@ -348,6 +353,13 @@ int RaspberryCamera::stop_capture() {
     return mmal_port_parameter_set_boolean(video_, MMAL_PARAMETER_CAPTURE, MMAL_FALSE);
 }
 
+void RaspberryCamera::update_frame(cv::Mat frame) {
+    std::lock_guard guard(mutex_);
+
+    frame_ = std::move(frame);
+    frame_number_++;
+}
+
 void RaspberryCamera::camera_control_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_T* buffer) {
     if (buffer->cmd == MMAL_EVENT_PARAMETER_CHANGED) {
         INFO() << "Something changed";
@@ -371,7 +383,9 @@ void RaspberryCamera::camera_video_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADE
     }
 
     DBG() << "Recv video buffer size: " << buffer->length;
-
+    mmal_buffer_header_mem_lock(buffer);
+    cv::Mat new_frame(width_, height_, CV_8UC1, buffer->data);
+    mmal_buffer_header_mem_unlock(buffer);
     // release buffer back to the pool
     mmal_buffer_header_release(buffer);
 
@@ -389,6 +403,8 @@ void RaspberryCamera::camera_video_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADE
             ERR() << "Unable to return a buffer to the camera port";
         }
     }
+
+    raspicam->update_frame(std::move(new_frame));
 }
 
 }

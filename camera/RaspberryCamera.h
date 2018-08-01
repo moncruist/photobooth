@@ -45,10 +45,16 @@ private:
     int start_capture();
     int stop_capture();
 
+    void update_frame(cv::Mat frame);
+
     static void camera_control_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_T* buffer);
     static void camera_video_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_T* buffer);
 
     std::mutex mutex_;
+
+    std::atomic<int64_t> frame_number_ {0};
+    std::atomic<bool> initialized_ {false};
+    cv::Mat frame_;
 
     unsigned int width_ {0};
     unsigned int height_ {0};
