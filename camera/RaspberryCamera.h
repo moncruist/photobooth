@@ -2,6 +2,7 @@
 #define PHOTOBOOTH_RASPBERRYCAMERA_H
 
 #include <mutex>
+#include <atomic>
 #include <interface/mmal/mmal.h>
 #include <interface/mmal/util/mmal_connection.h>
 

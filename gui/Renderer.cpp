@@ -5,67 +5,14 @@
 namespace phb::gui {
 
 bool Renderer::on_init(AbstractEglGui &context) {
-    char vShaderStr[] =
-        "attribute vec4 vPosition;    \n"
-        "void main()                  \n"
-        "{                            \n"
-        "   gl_Position = vPosition;  \n"
-        "}                            \n";
-
-    char fShaderStr[] =
-        "precision mediump float;\n"\
-      "void main()                                  \n"
-        "{                                            \n"
-        "  gl_FragColor = vec4 ( 1.0, 0.0, 0.0, 1.0 );\n"
-        "}                                            \n";
-
-    GLuint vertexShader;
-    GLuint fragmentShader;
-    GLint linked;
-
-    // Load the vertex/fragment shaders
-    vertexShader = load_shader ( GL_VERTEX_SHADER, vShaderStr );
-    fragmentShader = load_shader ( GL_FRAGMENT_SHADER, fShaderStr );
-
-    // Create the program object
-    program_object_ = glCreateProgram ( );
-
-    if ( program_object_ == 0 )
-        return 0;
-
-    glAttachShader ( program_object_, vertexShader );
-    glAttachShader ( program_object_, fragmentShader );
-
-    // Bind vPosition to attribute 0
-    glBindAttribLocation ( program_object_, 0, "vPosition" );
-
-    // Link the program
-    glLinkProgram ( program_object_ );
-
-    // Check the link status
-    glGetProgramiv ( program_object_, GL_LINK_STATUS, &linked );
-
-    if ( !linked )
-    {
-        GLint infoLen = 0;
-
-        glGetProgramiv ( program_object_, GL_INFO_LOG_LENGTH, &infoLen );
-
-        if ( infoLen > 1 )
-        {
-            char* infoLog = (char*) malloc (sizeof(char) * infoLen );
-
-            glGetProgramInfoLog ( program_object_, infoLen, NULL, infoLog );
-            ERR() <<  "Error linking program:" << infoLog;
-
-            free ( infoLog );
-        }
-
-        glDeleteProgram ( program_object_ );
-        return false;
-    }
-
     glClearColor ( 0.0f, 0.0f, 0.0f, 0.0f );
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glGenTextures(1, &frame_texture_);
+    glBindTexture(GL_TEXTURE_2D, frame_texture_);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
     return true;
 }
 

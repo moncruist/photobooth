@@ -3,6 +3,7 @@
 #include <interface/mmal/util/mmal_util_params.h>
 #include <interface/mmal/util/mmal_util.h>
 #include "RaspberryCamera.h"
+#include "util/TimeUtil.h"
 #include "logging.h"
 
 #define WRAP_CALL_RETURN_FULL(call, st)  do {\
@@ -375,6 +376,11 @@ void RaspberryCamera::camera_control_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEA
 }
 
 void RaspberryCamera::camera_video_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer) {
+    using namespace std::chrono;
+    static int64_t frame_num = 0;
+    static int64_t total_time = 0;
+    static int64_t prev_time = 0;
+
     RaspberryCamera* raspicam = reinterpret_cast<RaspberryCamera*>(port->userdata);
     if (!raspicam) {
         ERR() << "Received a camera buffer callback with no state";
@@ -382,9 +388,26 @@ void RaspberryCamera::camera_video_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADE
         mmal_buffer_header_release(buffer);
     }
 
-    DBG() << "Recv video buffer size: " << buffer->length;
+    if (prev_time == 0) {
+        prev_time = util::now_ms();
+    }
+
+    frame_num++;
+
+    auto current_time = util::now_ms();
+    auto delta = current_time - prev_time;
+    prev_time = current_time;
+
+    total_time += delta;
+    if (total_time > 10000) {
+        double fps = static_cast<double>(frame_num) * 1000 / static_cast<double>(total_time);
+        DBG() << frame_num << " frames captured in " << total_time << " milliseconds. FPS=" << fps;
+        total_time -= 10000;
+        frame_num = 0;
+    }
+
     mmal_buffer_header_mem_lock(buffer);
-    cv::Mat new_frame(width_, height_, CV_8UC1, buffer->data);
+    cv::Mat new_frame(raspicam->width_, raspicam->height_, CV_8UC1, buffer->data);
     mmal_buffer_header_mem_unlock(buffer);
     // release buffer back to the pool
     mmal_buffer_header_release(buffer);

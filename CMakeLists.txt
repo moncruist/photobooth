@@ -38,6 +38,10 @@ set(CAMERA_SOURCES
         camera/OpenCvCamera.cpp
         camera/OpenCvCamera.h)
 
+set(UTIL_SOURCES
+        util/TimeUtil.cpp
+        util/TimeUtil.h)
+
 set(PLATFORM_SOURCES)
 set(PLATFORM_LIBS)
 
@@ -87,7 +91,8 @@ set(PHOTOBOOTH_SOURCES
         ${PLATFORM_SOURCES}
         ${DSLR_SOURCES}
         ${GUI_SOURCES}
-        ${CAMERA_SOURCES})
+        ${CAMERA_SOURCES}
+        ${UTIL_SOURCES})
 
 include_directories(${GPHOTO2_INCLUDE_DIR})
 include_directories(${X11_INCLUDE_DIR})
