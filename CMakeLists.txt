@@ -19,7 +19,6 @@ find_package(Boost COMPONENTS log REQUIRED )
 find_package(Qt5 COMPONENTS Core Widgets OpenGL REQUIRED )
 find_package(Gphoto2 REQUIRED)
 find_package(Threads REQUIRED)
-#find_package(X11 REQUIRED)
 
 # Instruct CMake to run moc automatically when needed
 set(CMAKE_AUTOMOC ON)
@@ -35,10 +34,6 @@ set(DSLR_SOURCES
         dslr/DslrContext.h)
 
 set(GUI_SOURCES
-#        gui/AbstractEglGui.cpp
-#        gui/AbstractEglGui.h
-#        gui/Renderer.cpp
-#        gui/Renderer.h
         gui/AppWindow.cpp
         gui/AppWindow.h)
 
@@ -60,38 +55,11 @@ if (RPI)
 
     list(APPEND PLATFORM_LIBS ${RASPBERRY_LIBRARIES})
 
-    find_package(OpenGL COMPONENTS EGL REQUIRED)
-    find_package(OpenGLES2 REQUIRED)
-
-#    include_directories(${OpengGL_EGL_INCLUDE_DIR})
-#    include_directories(${OPENGLES2_INCLUDE_DIR})
     include_directories(${RASPBERRY_INCLUDE_DIR})
-
-#    list(APPEND GUI_SOURCES
-#            gui/XlibEglGui.cpp
-#            gui/XlibEglGui.h)
-
-    list(APPEND PLATFORM_LIBS
-            OpenGL::EGL
-            OpenGLES2::OpenGLES2)
 
     list(APPEND CAMERA_SOURCES
             camera/RaspberryCamera.cpp
             camera/RaspberryCamera.h)
-else()
-    find_package(OpenGL COMPONENTS EGL REQUIRED)
-    find_package(OpenGLES2 REQUIRED)
-
-#    include_directories(${OpengGL_EGL_INCLUDE_DIR})
-#    include_directories(${OPENGLES2_INCLUDE_DIR})
-
-#    list(APPEND GUI_SOURCES
-#            gui/XlibEglGui.cpp
-#            gui/XlibEglGui.h)
-
-    list(APPEND PLATFORM_LIBS
-            OpenGL::EGL
-            OpenGLES2::OpenGLES2)
 endif()
 
 set(PHOTOBOOTH_SOURCES
@@ -104,7 +72,6 @@ set(PHOTOBOOTH_SOURCES
         ${UTIL_SOURCES})
 
 include_directories(${GPHOTO2_INCLUDE_DIR})
-#include_directories(${X11_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIR})
 
 add_executable(photobooth ${PHOTOBOOTH_SOURCES})
@@ -114,7 +81,6 @@ target_link_libraries(photobooth
         ${PLATFORM_LIBS}
         ${Boost_LIBRARIES}
         ${Gphoto2_LIBRARIES}
-#        ${X11_LIBRARIES}
         Threads::Threads
         Qt5::Core
         Qt5::OpenGL
