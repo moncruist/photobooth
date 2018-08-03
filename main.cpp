@@ -2,15 +2,18 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/utility/setup.hpp>
 #include <fstream>
-#include "gui/Renderer.h"
+#include <QString>
+//#include "gui/Renderer.h"
+#include "gui/AppWindow.h"
 
 #ifdef RPI_BOARD
 #include <bcm_host.h>
-#include "gui/XlibEglGui.h"
+#include <QApplication>
+//#include "gui/XlibEglGui.h"
 #include "camera/RaspberryCamera.h"
 #else
 #include "camera/OpenCvCamera.h"
-#include "gui/XlibEglGui.h"
+//#include "gui/XlibEglGui.h"
 #endif
 
 #include "dslr/DslrCamera.h"
@@ -70,8 +73,8 @@ int main(int argc, char *argv[]) {
     }
 
     std::unique_ptr<phb::camera::CameraInterface> camera;
-    std::unique_ptr<phb::gui::AbstractEglGui> gui;
-    phb::gui::Renderer renderer;
+//    std::unique_ptr<phb::gui::AbstractEglGui> gui;
+//    phb::gui::Renderer renderer;
 #ifdef RPI_BOARD
     camera = std::make_unique<phb::camera::RaspberryCamera>(1920, 1080, 30);
 #else
@@ -110,14 +113,13 @@ int main(int argc, char *argv[]) {
     }
     */
 
-    try {
-        gui = std::make_unique<phb::gui::XlibEglGui>("demo", &renderer);
-        gui->run();
-    } catch (std::runtime_error &e) {
-        ERR() << "Gui error: " << e.what();
-    }
+    QApplication app(argc, argv);
+    phb::gui::AppWindow window;
+    window.show();
+    app.exec();
 
-    gui.reset();
+    QString str ="asdf";
+    INFO() << str.toStdString();
 
     camera->deinit();
     // the camera will be deinitialized automatically in VideoCapture destructor

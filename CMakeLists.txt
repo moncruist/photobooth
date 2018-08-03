@@ -16,10 +16,15 @@ SET(Boost_USE_STATIC_LIBS ON)
 # Find the QtWidgets library
 find_package(OpenCV REQUIRED)
 find_package(Boost COMPONENTS log REQUIRED )
+find_package(Qt5 COMPONENTS Core Widgets OpenGL REQUIRED )
 find_package(Gphoto2 REQUIRED)
 find_package(Threads REQUIRED)
-find_package(X11 REQUIRED)
+#find_package(X11 REQUIRED)
 
+# Instruct CMake to run moc automatically when needed
+set(CMAKE_AUTOMOC ON)
+# Create code from a list of Qt designer ui files
+set(CMAKE_AUTOUIC ON)
 
 set(DSLR_SOURCES
         dslr/DslrCamera.cpp
@@ -30,8 +35,12 @@ set(DSLR_SOURCES
         dslr/DslrContext.h)
 
 set(GUI_SOURCES
-        gui/AbstractEglGui.cpp 
-        gui/AbstractEglGui.h gui/Renderer.cpp gui/Renderer.h)
+#        gui/AbstractEglGui.cpp
+#        gui/AbstractEglGui.h
+#        gui/Renderer.cpp
+#        gui/Renderer.h
+        gui/AppWindow.cpp
+        gui/AppWindow.h)
 
 set(CAMERA_SOURCES
         camera/CameraInterface.h
@@ -54,13 +63,13 @@ if (RPI)
     find_package(OpenGL COMPONENTS EGL REQUIRED)
     find_package(OpenGLES2 REQUIRED)
 
-    include_directories(${OpengGL_EGL_INCLUDE_DIR})
-    include_directories(${OPENGLES2_INCLUDE_DIR})
+#    include_directories(${OpengGL_EGL_INCLUDE_DIR})
+#    include_directories(${OPENGLES2_INCLUDE_DIR})
     include_directories(${RASPBERRY_INCLUDE_DIR})
 
-    list(APPEND GUI_SOURCES
-            gui/XlibEglGui.cpp
-            gui/XlibEglGui.h)
+#    list(APPEND GUI_SOURCES
+#            gui/XlibEglGui.cpp
+#            gui/XlibEglGui.h)
 
     list(APPEND PLATFORM_LIBS
             OpenGL::EGL
@@ -73,12 +82,12 @@ else()
     find_package(OpenGL COMPONENTS EGL REQUIRED)
     find_package(OpenGLES2 REQUIRED)
 
-    include_directories(${OpengGL_EGL_INCLUDE_DIR})
-    include_directories(${OPENGLES2_INCLUDE_DIR})
+#    include_directories(${OpengGL_EGL_INCLUDE_DIR})
+#    include_directories(${OPENGLES2_INCLUDE_DIR})
 
-    list(APPEND GUI_SOURCES
-            gui/XlibEglGui.cpp
-            gui/XlibEglGui.h)
+#    list(APPEND GUI_SOURCES
+#            gui/XlibEglGui.cpp
+#            gui/XlibEglGui.h)
 
     list(APPEND PLATFORM_LIBS
             OpenGL::EGL
@@ -95,7 +104,7 @@ set(PHOTOBOOTH_SOURCES
         ${UTIL_SOURCES})
 
 include_directories(${GPHOTO2_INCLUDE_DIR})
-include_directories(${X11_INCLUDE_DIR})
+#include_directories(${X11_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIR})
 
 add_executable(photobooth ${PHOTOBOOTH_SOURCES})
@@ -105,5 +114,8 @@ target_link_libraries(photobooth
         ${PLATFORM_LIBS}
         ${Boost_LIBRARIES}
         ${Gphoto2_LIBRARIES}
-        ${X11_LIBRARIES}
-        Threads::Threads )
+#        ${X11_LIBRARIES}
+        Threads::Threads
+        Qt5::Core
+        Qt5::OpenGL
+        Qt5::Widgets)
