@@ -82,34 +82,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-
-/*    cv::CascadeClassifier face_cascade("/usr/local/share/OpenCV/haarcascades/haarcascade_frontalface_default.xml");
-    cv::CascadeClassifier smile_cascade("/usr/local/share/OpenCV/haarcascades/haarcascade_smile.xml");
-
-    cv::Mat gray;
-    cv::namedWindow("edges",1);
-    for(;;)
-    {
-        cv::Mat frame = camera->get_frame(); // get a new frame from camera
-        cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
-        std::vector<cv::Rect> faces;
-        face_cascade.detectMultiScale(gray, faces, 1.05, 8, CV_HAAR_SCALE_IMAGE, {55, 55});
-        for (auto& face : faces) {
-            cv::rectangle(frame, face, {0, 0, 255}, 2);
-
-            cv::Mat roi(gray, face);
-            std::vector<cv::Rect> smiles;
-            smile_cascade.detectMultiScale(roi, smiles, 1.7, 22, CV_HAAR_SCALE_IMAGE, {25, 25});
-            for (auto& smile : smiles) {
-                cv::Rect smile_rec(face.x + smile.x, face.y + smile.y, smile.width, smile.height);
-                cv::rectangle(frame, smile_rec, {0, 255, 0}, 2);
-            }
-        }
-        imshow("edges", frame);
-        if(cv::waitKey(30) >= 0) break;
-    }
-    */
-
     QApplication app(argc, argv);
     phb::gui::AppWindow window;
     window.setFixedSize(1920, 1080);
