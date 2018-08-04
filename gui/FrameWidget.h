@@ -1,12 +1,12 @@
 #ifndef PHOTOBOOTH_FRAMEWIDGET_H
 #define PHOTOBOOTH_FRAMEWIDGET_H
 
-#include <QWidget>
+#include <QGLWidget>
 #include <opencv2/opencv.hpp>
 
 namespace phb::gui {
 
-class FrameWidget : public QWidget {
+class FrameWidget : public QGLWidget {
 public:
     FrameWidget(QWidget* parent = nullptr);
 
