@@ -17,6 +17,7 @@ public:
     int init() override;
     int deinit() override;
     bool is_valid() override;
+    int64_t frame_number() override;
     cv::Mat get_frame() override;
 
 private:

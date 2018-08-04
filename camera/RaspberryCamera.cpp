@@ -407,7 +407,7 @@ void RaspberryCamera::camera_video_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADE
     }
 
     mmal_buffer_header_mem_lock(buffer);
-    cv::Mat new_frame(raspicam->width_, raspicam->height_, CV_8UC1, buffer->data);
+    cv::Mat new_frame = cv::Mat(raspicam->height_, raspicam->width_, CV_8UC1, buffer->data).clone();
     mmal_buffer_header_mem_unlock(buffer);
     // release buffer back to the pool
     mmal_buffer_header_release(buffer);
@@ -428,6 +428,10 @@ void RaspberryCamera::camera_video_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADE
     }
 
     raspicam->update_frame(std::move(new_frame));
+}
+
+int64_t RaspberryCamera::frame_number() {
+    return frame_number_;
 }
 
 }

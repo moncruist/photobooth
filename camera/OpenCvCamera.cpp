@@ -36,7 +36,12 @@ cv::Mat OpenCvCamera::get_frame() {
 
     cv::Mat frame;
     *camera_ >> frame;
+    frame_number_++;
     return frame;
+}
+
+int64_t OpenCvCamera::frame_number() {
+    return frame_number_;
 }
 
 }

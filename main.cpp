@@ -2,9 +2,11 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/utility/setup.hpp>
 #include <fstream>
+#include <thread>
 #include <QString>
 #include <QApplication>
 #include "gui/AppWindow.h"
+#include "CameraConsumerThread.h"
 
 #ifdef RPI_BOARD
 #include <bcm_host.h>
@@ -110,8 +112,15 @@ int main(int argc, char *argv[]) {
 
     QApplication app(argc, argv);
     phb::gui::AppWindow window;
+    window.setFixedSize(1920, 1080);
     window.show();
+
+    phb::CameraConsumerThread consumerThread(camera.get(), window.frameOutput());
+    consumerThread.start();
     app.exec();
+
+    consumerThread.stop();
+    consumerThread.join();
 
     camera->deinit();
     // the camera will be deinitialized automatically in VideoCapture destructor

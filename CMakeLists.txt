@@ -35,7 +35,7 @@ set(DSLR_SOURCES
 
 set(GUI_SOURCES
         gui/AppWindow.cpp
-        gui/AppWindow.h)
+        gui/AppWindow.h gui/FrameWidget.cpp gui/FrameWidget.h)
 
 set(CAMERA_SOURCES
         camera/CameraInterface.h
@@ -69,7 +69,7 @@ set(PHOTOBOOTH_SOURCES
         ${DSLR_SOURCES}
         ${GUI_SOURCES}
         ${CAMERA_SOURCES}
-        ${UTIL_SOURCES})
+        ${UTIL_SOURCES} CameraConsumerThread.cpp CameraConsumerThread.h)
 
 include_directories(${GPHOTO2_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIR})
